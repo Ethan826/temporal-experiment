@@ -6,15 +6,17 @@ import { ApplicationFailure } from "@temporalio/workflow";
  *
  * @param wireTransferData - The data required to initiate the wire transfer.
  * @param apiUrl - The URL of the fake bank API.
+ * @param fetchImpl - The fetch implementation to use (default: global fetch).
  * @returns A promise resolving with the bank's response.
  *
  * @throws {ApplicationFailure} For retryable and non-retryable errors.
  */
-export async function initiateWireTransfer(
+export const initiateWireTransfer = async (
   wireTransferData: any,
-  apiUrl: string
-): Promise<any> {
-  const response = await fetch(apiUrl, {
+  apiUrl: string,
+  fetchImpl: typeof fetch = global.fetch
+): Promise<any> => {
+  const response = await fetchImpl(apiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -25,26 +27,22 @@ export async function initiateWireTransfer(
   return match(response)
     .with({ status: 200 }, (res) => res.json())
     .with({ status: 503 }, () => {
-      throw new ApplicationFailure(
-        "Bank service unavailable, retrying...",
-        null,
-        false
+      throw ApplicationFailure.retryable(
+        "Bank service unavailable, retrying..."
       );
     })
     .with({ status: 401 }, () => {
-      throw new ApplicationFailure("Authentication failed", null, true);
+      throw ApplicationFailure.nonRetryable("Authentication failed");
     })
     .with(
       { status: P.when((status) => status >= 400 && status < 500) },
       (res) => {
-        throw new ApplicationFailure(
-          `Client error: ${res.statusText}`,
-          null,
-          true
+        throw ApplicationFailure.nonRetryable(
+          `Client error: ${res.statusText}`
         );
       }
     )
     .otherwise(() => {
-      throw new ApplicationFailure("Unexpected error occurred", null, true);
+      throw ApplicationFailure.nonRetryable("Unexpected error occurred");
     });
-}
+};

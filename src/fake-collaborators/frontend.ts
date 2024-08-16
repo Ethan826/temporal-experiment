@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 
-interface WireTransferRequest {
+export interface WireTransferRequest {
   transactionId: string;
   amount: number;
   currency: string;
@@ -11,7 +11,7 @@ interface WireTransferRequest {
   note: string;
 }
 
-const generateWireTransferRequest = (
+export const generateWireTransferRequest = (
   chaosFactor: number = 0
 ): WireTransferRequest => {
   const shouldCorrupt = Math.random() < chaosFactor;
@@ -30,16 +30,17 @@ const generateWireTransferRequest = (
   };
 };
 
-const sendDomesticWireRequest = async (
+export const sendDomesticWireRequest = async (
   apiUrl: string,
-  chaosFactor: number = 0
+  chaosFactor: number = 0,
+  fetchImpl: typeof fetch = global.fetch // Injected fetch implementation
 ) => {
   const payload = generateWireTransferRequest(chaosFactor);
 
   console.log(`Sending payload: ${JSON.stringify(payload, null, 2)}`);
 
   try {
-    const response = await fetch(apiUrl, {
+    const response = await fetchImpl(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -56,10 +57,6 @@ const sendDomesticWireRequest = async (
     console.log(`Response: `, responseData);
   } catch (error) {
     console.error(`Error sending request: ${error}`);
+    throw error;
   }
 };
-
-// Example usage
-const apiUrl = "http://localhost:8000/send-wire";
-const chaosFactor = 0.1; // 10% chance to introduce corrupted data
-sendDomesticWireRequest(apiUrl, chaosFactor);
