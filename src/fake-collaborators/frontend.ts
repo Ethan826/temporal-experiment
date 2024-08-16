@@ -33,11 +33,12 @@ export const generateWireTransferRequest = (
 export const sendDomesticWireRequest = async (
   apiUrl: string,
   chaosFactor: number = 0,
-  fetchImpl: typeof fetch = global.fetch // Injected fetch implementation
+  fetchImpl: typeof fetch = global.fetch, // Injected fetch implementation
+  logger: Console = global.console // Injected logger (default to global console)
 ) => {
   const payload = generateWireTransferRequest(chaosFactor);
 
-  console.log(`Sending payload: ${JSON.stringify(payload, null, 2)}`);
+  logger.log(`Sending payload: ${JSON.stringify(payload, null, 2)}`);
 
   try {
     const response = await fetchImpl(apiUrl, {
@@ -53,10 +54,10 @@ export const sendDomesticWireRequest = async (
     }
 
     const responseData = await response.json();
-    console.log(`Request sent successfully: ${response.status}`);
-    console.log(`Response: `, responseData);
+    logger.log(`Request sent successfully: ${response.status}`);
+    logger.log(`Response: `, responseData);
   } catch (error) {
-    console.error(`Error sending request: ${error}`);
+    logger.error(`Error sending request: ${error}`);
     throw error;
   }
 };

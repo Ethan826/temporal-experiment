@@ -30,9 +30,15 @@ describe("generateWireTransferRequest", () => {
 
 describe("sendDomesticWireRequest", () => {
   let fetchSpy: jest.Mock;
+  let logSpy: jest.Mock;
+  let errorSpy: jest.Mock;
+  let consoleMock: Console;
 
   beforeEach(() => {
     fetchSpy = jest.fn();
+    logSpy = jest.fn();
+    errorSpy = jest.fn();
+    consoleMock = { ...console, log: logSpy, error: errorSpy };
   });
 
   it("should send a valid request successfully", async () => {
@@ -43,7 +49,7 @@ describe("sendDomesticWireRequest", () => {
     });
 
     const apiUrl = "http://localhost:8000/send-wire";
-    await sendDomesticWireRequest(apiUrl, 0, fetchSpy);
+    await sendDomesticWireRequest(apiUrl, 0, fetchSpy, consoleMock);
 
     expect(fetchSpy).toHaveBeenCalledWith(apiUrl, {
       method: "POST",
@@ -69,22 +75,20 @@ describe("sendDomesticWireRequest", () => {
 
     const apiUrl = "http://localhost:8000/send-wire";
 
-    await expect(sendDomesticWireRequest(apiUrl, 0, fetchSpy)).rejects.toThrow(
-      "HTTP error! status: 500"
-    );
+    await expect(
+      sendDomesticWireRequest(apiUrl, 0, fetchSpy, consoleMock)
+    ).rejects.toThrow("HTTP error! status: 500");
   });
 
   it("should log an error if the fetch fails", async () => {
     fetchSpy.mockRejectedValueOnce(new Error("Network error"));
 
-    console.error = jest.fn();
-
     const apiUrl = "http://localhost:8000/send-wire";
-    await expect(sendDomesticWireRequest(apiUrl, 0, fetchSpy)).rejects.toThrow(
-      "Network error"
-    );
+    await expect(
+      sendDomesticWireRequest(apiUrl, 0, fetchSpy, consoleMock)
+    ).rejects.toThrow("Network error");
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(errorSpy).toHaveBeenCalledWith(
       "Error sending request: Error: Network error"
     );
   });
@@ -97,9 +101,9 @@ describe("sendDomesticWireRequest", () => {
     });
 
     const apiUrl = "http://localhost:8000/send-wire";
-    await expect(sendDomesticWireRequest(apiUrl, 1, fetchSpy)).rejects.toThrow(
-      "HTTP error! status: 400"
-    );
+    await expect(
+      sendDomesticWireRequest(apiUrl, 1, fetchSpy, consoleMock)
+    ).rejects.toThrow("HTTP error! status: 400");
 
     const requestBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
     expect(requestBody.transactionId).toBe("");

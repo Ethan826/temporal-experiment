@@ -9,26 +9,41 @@ const FailureReasonSchema = z.enum([
   "INTERNAL_ERROR",
 ]);
 
-// Shared properties for both success and failure cases
+// Shared properties for all webhooks
 const sharedProperties = {
   transactionId: z.string().uuid(),
   timestamp: z.string().datetime(),
   comments: z.string().optional(),
 };
 
-// Define the Webhook schema with a union type
-export const WebhookSchema = z.union([
-  z.object({
-    ...sharedProperties,
-    status: z.literal("SUCCESS"),
-    failureReason: z.undefined(), // failureReason must be absent
-  }),
-  z.object({
-    ...sharedProperties,
-    status: z.literal("FAILURE"),
-    failureReason: FailureReasonSchema, // failureReason must be present
-  }),
+// Define specific webhook types using `status` as a discriminator
+const WireTransferSuccessSchema = z.object({
+  ...sharedProperties,
+  status: z.literal("SUCCESS"),
+  failureReason: z.undefined(), // failureReason must be absent
+});
+
+const WireTransferFailureSchema = z.object({
+  ...sharedProperties,
+  status: z.literal("FAILURE"),
+  failureReason: FailureReasonSchema, // failureReason must be present
+});
+
+// Union of all known webhook schemas
+export const KnownWebhookSchema = z.union([
+  WireTransferSuccessSchema,
+  WireTransferFailureSchema,
+  // Add other known webhook schemas here
 ]);
 
-// Inferred TypeScript type
-export type Webhook = z.infer<typeof WebhookSchema>;
+// Define an UnknownWebhookSchema
+export const UnknownWebhookSchema = z.object({
+  status: z.literal("UNKNOWN_WEBHOOK"),
+  rawPayload: z.unknown(),
+  timestamp: z.string().datetime().optional(),
+});
+
+// Inferred TypeScript types
+export type KnownWebhook = z.infer<typeof KnownWebhookSchema>;
+export type UnknownWebhook = z.infer<typeof UnknownWebhookSchema>;
+export type Webhook = KnownWebhook | UnknownWebhook;

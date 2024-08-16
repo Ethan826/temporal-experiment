@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { WebhookSchema } from "./webhook-schema";
 import * as fc from "fast-check";
+import { KnownWebhookSchema } from "../schemas/webhook-schema";
 
 describe("WebhookSchema with fast-check", () => {
   // Define a reasonable date range for the timestamp
@@ -40,7 +40,7 @@ describe("WebhookSchema with fast-check", () => {
   it("should validate a correct SUCCESS webhook", () => {
     fc.assert(
       fc.property(successWebhookArbitrary, (validWebhook) => {
-        WebhookSchema.parse(validWebhook); // Should not throw
+        expect(() => KnownWebhookSchema.parse(validWebhook)).not.toThrow(); // Should not throw
       })
     );
   });
@@ -48,7 +48,7 @@ describe("WebhookSchema with fast-check", () => {
   it("should validate a correct FAILURE webhook", () => {
     fc.assert(
       fc.property(failureWebhookArbitrary, (validWebhook) => {
-        WebhookSchema.parse(validWebhook); // Should not throw
+        expect(() => KnownWebhookSchema.parse(validWebhook)).not.toThrow(); // Should not throw
       })
     );
   });
@@ -56,12 +56,14 @@ describe("WebhookSchema with fast-check", () => {
   it("should fail validation for a SUCCESS webhook with failureReason present", () => {
     const invalidWebhookArbitrary = successWebhookArbitrary.map((webhook) => ({
       ...webhook,
-      failureReason: "INSUFFICIENT_FUNDS", // Invalid for SUCCESS
+      failureReason: "INSUFFICIENT_FUNDS" as const, // Invalid for SUCCESS
     }));
 
     fc.assert(
       fc.property(invalidWebhookArbitrary, (invalidWebhook) => {
-        expect(() => WebhookSchema.parse(invalidWebhook)).toThrow(z.ZodError);
+        expect(() => KnownWebhookSchema.parse(invalidWebhook)).toThrow(
+          z.ZodError
+        );
       })
     );
   });
@@ -74,7 +76,9 @@ describe("WebhookSchema with fast-check", () => {
 
     fc.assert(
       fc.property(invalidWebhookArbitrary, (invalidWebhook) => {
-        expect(() => WebhookSchema.parse(invalidWebhook)).toThrow(z.ZodError);
+        expect(() => KnownWebhookSchema.parse(invalidWebhook)).toThrow(
+          z.ZodError
+        );
       })
     );
   });

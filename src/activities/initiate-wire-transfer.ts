@@ -4,15 +4,15 @@ import { ApplicationFailure } from "@temporalio/workflow";
 /**
  * Initiates a wire transfer by calling the fake bank API.
  *
- * @param wireTransferData - The data required to initiate the wire transfer.
+ * @param T - The data required to initiate the wire transfer.
  * @param apiUrl - The URL of the fake bank API.
  * @param fetchImpl - The fetch implementation to use (default: global fetch).
  * @returns A promise resolving with the bank's response.
  *
  * @throws {ApplicationFailure} For retryable and non-retryable errors.
  */
-export const initiateWireTransfer = async (
-  wireTransferData: any,
+export const initiateWireTransfer = async <T>(
+  wireTransferData: T,
   apiUrl: string,
   fetchImpl: typeof fetch = global.fetch
 ): Promise<any> => {
@@ -24,7 +24,11 @@ export const initiateWireTransfer = async (
     body: JSON.stringify(wireTransferData),
   });
 
-  return match(response)
+  return handleResponse(response);
+};
+
+const handleResponse = (response: Response) =>
+  match(response)
     .with({ status: 200 }, (res) => res.json())
     .with({ status: 503 }, () => {
       throw ApplicationFailure.retryable(
@@ -45,4 +49,3 @@ export const initiateWireTransfer = async (
     .otherwise(() => {
       throw ApplicationFailure.nonRetryable("Unexpected error occurred");
     });
-};
