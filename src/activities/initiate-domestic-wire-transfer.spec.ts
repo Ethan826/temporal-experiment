@@ -10,7 +10,7 @@ describe("initiateDomesticWireTransfer", () => {
 
   const apiUrl = "http://localhost:8000/initiate-wire";
   const wireTransferData = {
-    transactionId: "123e4567-e89b-12d3-a456-426614174000",
+    id: "123e4567-e89b-12d3-a456-426614174000",
     amount: 1000,
     currency: "USD",
     senderAccount: "12345678",
@@ -25,7 +25,7 @@ describe("initiateDomesticWireTransfer", () => {
       status: 200,
       json: async () => ({
         success: true,
-        transactionId: wireTransferData.transactionId,
+        id: wireTransferData.id,
       }),
     });
 
@@ -45,7 +45,7 @@ describe("initiateDomesticWireTransfer", () => {
 
     expect(result).toEqual({
       success: true,
-      transactionId: wireTransferData.transactionId,
+      id: wireTransferData.id,
     });
   });
 

@@ -13,7 +13,7 @@ const port = process.env.POC_SERVER_PORT || 3000;
 const client = new WorkflowClient();
 
 const WireTransferRequestSchema = z.object({
-  transactionId: z.string().uuid().optional(), // Optional if you want to generate it server-side
+  id: z.string().uuid().optional(), // Optional if you want to generate it server-side
   amount: z.number().positive(),
   currency: z.enum(["USD", "EUR", "GBP"]),
   senderAccount: z.string().min(1),
@@ -44,13 +44,14 @@ app.post("/initiate-wire-transfer", async (req, res) => {
 
   try {
     // Use the provided transactionId or generate a new one
-    const transactionId = parsed.data.transactionId || uuidv4();
+    const id = parsed.data.id || uuidv4();
 
     // Start the Temporal workflow for wire transfer
     await client.start("initiateDomesticWireTransferWorkflow", {
       args: [
         {
-          transactionId,
+          fetchImpl: fetch,
+          id,
           amount,
           currency,
           senderAccount,
@@ -61,11 +62,11 @@ app.post("/initiate-wire-transfer", async (req, res) => {
         },
       ],
       taskQueue: "initiate-domestic-wire-transfer-task-queue",
-      workflowId: transactionId, // Use the transactionId as the workflowId
+      workflowId: id, // Use the transactionId as the workflowId
     });
 
     res.status(202).json({
-      transactionId,
+      transactionId: id,
       status: "PENDING",
       message: "Wire transfer initiation received. Processing...",
     });

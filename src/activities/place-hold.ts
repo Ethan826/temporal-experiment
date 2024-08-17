@@ -3,16 +3,35 @@ import {
   PlaceHoldResponseSchema,
 } from "../schemas/place-hold-response-schema";
 
+export type PlaceHoldRequest = {
+  accountNumber: string;
+  amount: number;
+  fetchImpl?: typeof fetch;
+  apiUrl?: string;
+  consoleImpl?: Console;
+};
+
+const DEFAULTS: Required<
+  Pick<PlaceHoldRequest, "apiUrl" | "consoleImpl" | "fetchImpl">
+> = {
+  apiUrl: "http://localhost:3002",
+  consoleImpl: console,
+  fetchImpl: global.fetch,
+};
+
 export const placeHold = async (
-  accountNumber: string,
-  amount: number,
-  fetchImpl: typeof fetch = globalThis.fetch,
-  consoleImpl: Console = console
+  req: PlaceHoldRequest
 ): Promise<PlaceHoldResponse> => {
-  const apiUrl = process.env.MWB_BACKEND_URL || "http://localhost:3002";
+  const { apiUrl, fetchImpl, consoleImpl, accountNumber, amount } = {
+    ...DEFAULTS,
+    ...req,
+  };
+
   const endpoint = `${apiUrl}/place-hold`;
 
   try {
+    console.log(`Trying to call ${endpoint} to place hold`);
+
     const response = await fetchImpl(endpoint, {
       method: "POST",
       headers: {

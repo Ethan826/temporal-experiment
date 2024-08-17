@@ -27,12 +27,12 @@ describe("placeHold", () => {
       json: async () => mockResponse,
     });
 
-    const result = await placeHold(
+    const result = await placeHold({
       accountNumber,
       amount,
-      fetchSpy,
-      consoleMock
-    );
+      fetchImpl: fetchSpy,
+      consoleImpl: consoleMock,
+    });
 
     expect(fetchSpy).toHaveBeenCalledWith("http://localhost:3002/place-hold", {
       method: "POST",
@@ -53,7 +53,12 @@ describe("placeHold", () => {
     });
 
     await expect(
-      placeHold(accountNumber, amount, fetchSpy, consoleMock)
+      placeHold({
+        accountNumber,
+        amount,
+        fetchImpl: fetchSpy,
+        consoleImpl: consoleMock,
+      })
     ).rejects.toThrow("Failed to place hold: Internal Server Error");
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -74,7 +79,12 @@ describe("placeHold", () => {
     });
 
     await expect(
-      placeHold(accountNumber, amount, fetchSpy, consoleMock)
+      placeHold({
+        accountNumber,
+        amount,
+        fetchImpl: fetchSpy,
+        consoleImpl: consoleMock,
+      })
     ).rejects.toThrow("Invalid input");
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -87,7 +97,12 @@ describe("placeHold", () => {
     fetchSpy.mockRejectedValueOnce(new Error("Network error"));
 
     await expect(
-      placeHold(accountNumber, amount, fetchSpy, consoleMock)
+      placeHold({
+        accountNumber,
+        amount,
+        fetchImpl: fetchSpy,
+        consoleImpl: consoleMock,
+      })
     ).rejects.toThrow("Network error");
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(

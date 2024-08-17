@@ -6,9 +6,9 @@ import { z } from "zod";
  */
 export const PlaceHoldResponseSchema = z.union([
   z.object({ response: z.literal("SUCCESS"), transactionId: z.string() }),
-  z.object({ response: z.literal("INSUFFICIENT_BALANCE") }),
-  z.object({ response: z.literal("SERVICE_UNAVAILABLE") }),
-  // More variants can be added here if needed
+  z.object({
+    response: z.enum(["INSUFFICIENT_BALANCE", "SERVICE_UNAVAILABLE"]),
+  }),
 ]);
 
 export type PlaceHoldResponse = z.infer<typeof PlaceHoldResponseSchema>;

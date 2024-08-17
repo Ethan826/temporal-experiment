@@ -5,7 +5,6 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
-const port = 3002;
 const defaultChaosFactor = 0;
 
 // Mock simulateFailure function for deterministic tests

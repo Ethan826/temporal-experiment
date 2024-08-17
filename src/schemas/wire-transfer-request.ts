@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const WireTransferRequestSchema = z.object({
-  transactionId: z.string().uuid(),
+  id: z.string().uuid(),
   amount: z.number().positive(),
   currency: z.enum(["USD"]),
   senderAccount: z.string().min(10).max(20),

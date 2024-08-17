@@ -1,9 +1,10 @@
+import { uuid4 } from "@temporalio/workflow";
 import express from "express";
 
 const app = express();
 app.use(express.json());
 
-const port = process.env.LEGACY_SYSTEM_PORT || 3002;
+const port = process.env.MWB_PORT || 3002;
 const defaultChaosFactor = parseFloat(process.env.CHAOS_FACTOR || "0");
 
 const simulateFailure = (chaosFactor: number) => {
@@ -24,7 +25,7 @@ const simulateFailure = (chaosFactor: number) => {
   return null;
 };
 
-app.post("/freeze-account", (req, res) => {
+app.post("/place-hold", (req, res) => {
   const chaosFactor =
     parseFloat(req.query.chaosFactor as string) || defaultChaosFactor;
 
@@ -33,11 +34,7 @@ app.post("/freeze-account", (req, res) => {
     return res.status(failure.status).json({ error: failure.message });
   }
 
-  res.status(200).json({
-    transactionId: req.body.transactionId,
-    status: "ACCOUNT_FROZEN",
-    message: "Account has been successfully frozen.",
-  });
+  res.status(200).json({ response: "SUCCESS", transactionId: uuid4() });
 });
 
 app.post("/release-funds", (req, res) => {

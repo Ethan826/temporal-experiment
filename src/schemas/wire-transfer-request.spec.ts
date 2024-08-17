@@ -3,7 +3,7 @@ import * as fc from "fast-check";
 
 describe("WireTransferRequestSchema with fast-check", () => {
   const validRequestArbitrary = fc.record({
-    transactionId: fc.uuid(),
+    id: fc.uuid(),
     amount: fc
       .float({ min: 1, max: 100000 }) // Ensuring positive numbers between 1 and 100,000
       .filter((n) => !isNaN(n) && n > 0) // Filtering out NaN and negative numbers

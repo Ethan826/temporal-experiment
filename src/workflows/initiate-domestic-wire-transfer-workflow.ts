@@ -1,5 +1,6 @@
 import {
   ApplicationFailure,
+  proxyActivities,
   setHandler,
   startChild,
 } from "@temporalio/workflow";
@@ -8,21 +9,27 @@ import {
   wireTransferSuccessSignal,
   wireTransferFailureSignal,
 } from "../signals";
-import { initiateDomesticWireTransfer } from "../activities/initiate-domestic-wire-transfer";
 import { placeHoldWorkflow } from "./place-hold-workflow";
 import { match } from "ts-pattern";
 import {
   WireTransferSuccess,
   WireTransferFailure,
 } from "../schemas/webhook-schema";
+import * as activities from "../activities";
 
 export async function initiateDomesticWireTransferWorkflow(
   input: WireTransferRequest,
-  apiUrl = "http://localhost:3001"
+  apiUrl = "http://localhost:3001/initiate-wire"
 ): Promise<WireTransferSuccess | WireTransferFailure> {
+  const { initiateDomesticWireTransfer } = proxyActivities<typeof activities>({
+    startToCloseTimeout: "1 minutes",
+  });
+
+  console.log("received", input);
+
   const placeHoldResult = await startChild(placeHoldWorkflow, {
     args: [input.senderAccount, input.amount],
-    workflowId: `place-hold-${input.transactionId}`,
+    workflowId: `place-hold-${input.id}`,
     taskQueue: "place-hold-task-queue",
   });
 
@@ -46,6 +53,7 @@ export async function initiateDomesticWireTransferWorkflow(
     })
     .exhaustive();
 
+  console.log(`Calling ${apiUrl}`);
   const sendWireResult = await initiateDomesticWireTransfer(input, apiUrl);
   console.log("Sent wire request", sendWireResult);
 
