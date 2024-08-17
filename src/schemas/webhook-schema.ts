@@ -17,17 +17,19 @@ const sharedProperties = {
 };
 
 // Define specific webhook types using `status` as a discriminator
-const WireTransferSuccessSchema = z.object({
+export const WireTransferSuccessSchema = z.object({
   ...sharedProperties,
   status: z.literal("SUCCESS"),
   failureReason: z.undefined(), // failureReason must be absent
 });
+export type WireTransferSuccess = z.infer<typeof WireTransferSuccessSchema>;
 
-const WireTransferFailureSchema = z.object({
+export const WireTransferFailureSchema = z.object({
   ...sharedProperties,
   status: z.literal("FAILURE"),
   failureReason: FailureReasonSchema, // failureReason must be present
 });
+export type WireTransferFailure = z.infer<typeof WireTransferFailureSchema>;
 
 // Union of all known webhook schemas
 export const KnownWebhookSchema = z.union([

@@ -1,7 +1,7 @@
-import { initiateWireTransfer } from "./initiate-wire-transfer";
+import { initiateDomesticWireTransfer } from "./initiate-domestic-wire-transfer";
 import { ApplicationFailure } from "@temporalio/workflow";
 
-describe("initiateWireTransfer", () => {
+describe("initiateDomesticWireTransfer", () => {
   let fetchMock: jest.Mock;
 
   beforeEach(() => {
@@ -18,7 +18,7 @@ describe("initiateWireTransfer", () => {
     receiverName: "John Doe",
     receiverBank: "Bank of Tests",
     note: "Test transfer",
-  };
+  } as const;
 
   it("should successfully initiate a wire transfer", async () => {
     fetchMock.mockResolvedValueOnce({
@@ -29,7 +29,7 @@ describe("initiateWireTransfer", () => {
       }),
     });
 
-    const result = await initiateWireTransfer(
+    const result = await initiateDomesticWireTransfer(
       wireTransferData,
       apiUrl,
       fetchMock
@@ -52,7 +52,11 @@ describe("initiateWireTransfer", () => {
   it("should throw ApplicationFailure for 503 Service Unavailable", async () => {
     fetchMock.mockResolvedValueOnce({ status: 503 });
 
-    const promise = initiateWireTransfer(wireTransferData, apiUrl, fetchMock);
+    const promise = initiateDomesticWireTransfer(
+      wireTransferData,
+      apiUrl,
+      fetchMock
+    );
 
     await expect(promise).rejects.toThrow(ApplicationFailure);
     await expect(promise).rejects.toMatchObject({
@@ -64,7 +68,11 @@ describe("initiateWireTransfer", () => {
   it("should throw ApplicationFailure for 401 Unauthorized", async () => {
     fetchMock.mockResolvedValueOnce({ status: 401 });
 
-    const promise = initiateWireTransfer(wireTransferData, apiUrl, fetchMock);
+    const promise = initiateDomesticWireTransfer(
+      wireTransferData,
+      apiUrl,
+      fetchMock
+    );
 
     await expect(promise).rejects.toThrow(ApplicationFailure);
     await expect(promise).rejects.toMatchObject({
@@ -76,7 +84,11 @@ describe("initiateWireTransfer", () => {
   it("should throw ApplicationFailure for client errors (400-499)", async () => {
     fetchMock.mockResolvedValueOnce({ status: 400, statusText: "Bad Request" });
 
-    const promise = initiateWireTransfer(wireTransferData, apiUrl, fetchMock);
+    const promise = initiateDomesticWireTransfer(
+      wireTransferData,
+      apiUrl,
+      fetchMock
+    );
 
     await expect(promise).rejects.toThrow(ApplicationFailure);
     await expect(promise).rejects.toMatchObject({
@@ -88,7 +100,11 @@ describe("initiateWireTransfer", () => {
   it("should throw ApplicationFailure for unexpected errors", async () => {
     fetchMock.mockResolvedValueOnce({ status: 500 });
 
-    const promise = initiateWireTransfer(wireTransferData, apiUrl, fetchMock);
+    const promise = initiateDomesticWireTransfer(
+      wireTransferData,
+      apiUrl,
+      fetchMock
+    );
 
     await expect(promise).rejects.toThrow(ApplicationFailure);
     await expect(promise).rejects.toMatchObject({

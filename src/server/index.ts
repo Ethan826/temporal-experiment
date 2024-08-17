@@ -1,5 +1,6 @@
 import express from "express";
-import { WorkflowClient } from "@temporalio/client"; // Assuming you have the Temporal client installed
+import { z } from "zod";
+import { WorkflowClient } from "@temporalio/client";
 import { v4 as uuidv4 } from "uuid";
 
 // Initialize the Express app
@@ -11,8 +12,26 @@ const port = process.env.POC_SERVER_PORT || 3000;
 // Initialize the Temporal Workflow client
 const client = new WorkflowClient();
 
+const WireTransferRequestSchema = z.object({
+  transactionId: z.string().uuid().optional(), // Optional if you want to generate it server-side
+  amount: z.number().positive(),
+  currency: z.enum(["USD", "EUR", "GBP"]),
+  senderAccount: z.string().min(1),
+  receiverAccount: z.string().min(1),
+  receiverName: z.string().min(1),
+  receiverBank: z.string().min(1),
+  note: z.string().optional(),
+});
+
 // Define the route for initiating a wire transfer
-app.post("/request-wire-transfer", async (req, res) => {
+app.post("/initiate-wire-transfer", async (req, res) => {
+  const parsed = WireTransferRequestSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    res.status(400).json(parsed.error.flatten());
+    return;
+  }
+
   const {
     amount,
     currency,
@@ -21,14 +40,14 @@ app.post("/request-wire-transfer", async (req, res) => {
     receiverName,
     receiverBank,
     note,
-  } = req.body;
+  } = parsed.data;
 
   try {
-    // Generate a unique transaction ID
-    const transactionId = uuidv4();
+    // Use the provided transactionId or generate a new one
+    const transactionId = parsed.data.transactionId || uuidv4();
 
     // Start the Temporal workflow for wire transfer
-    const handle = await client.start("wireTransferWorkflow", {
+    await client.start("initiateDomesticWireTransferWorkflow", {
       args: [
         {
           transactionId,
@@ -41,42 +60,20 @@ app.post("/request-wire-transfer", async (req, res) => {
           note,
         },
       ],
-      taskQueue: "wire-transfer-task-queue",
-      workflowId: transactionId,
+      taskQueue: "initiate-domestic-wire-transfer-task-queue",
+      workflowId: transactionId, // Use the transactionId as the workflowId
     });
 
     res.status(202).json({
       transactionId,
       status: "PENDING",
-      message: "Wire transfer request received. Processing...",
+      message: "Wire transfer initiation received. Processing...",
     });
   } catch (error) {
     console.error("Error starting workflow:", error);
     res.status(500).json({
-      error: "Failed to process wire transfer request. Please try again later.",
-    });
-  }
-});
-
-// Define the route to receive webhooks
-app.post("/webhook", async (req, res) => {
-  const { transactionId, status } = req.body;
-
-  try {
-    // Signal the Temporal workflow with the webhook data
-    await client.signalWorkflow("wireTransferWorkflow", {
-      signalName: "updateStatus",
-      workflowId: transactionId,
-      args: [status],
-    });
-
-    res
-      .status(200)
-      .json({ message: "Webhook received and processed successfully." });
-  } catch (error) {
-    console.error("Error processing webhook:", error);
-    res.status(500).json({
-      error: "Failed to process webhook. Please try again later.",
+      error:
+        "Failed to process wire transfer initiation. Please try again later.",
     });
   }
 });

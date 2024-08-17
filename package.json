@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "main": "index.ts",
   "license": "MIT",
-  "scripts": {"test": "jest"},
+  "scripts": {
+    "test": "jest",
+    "run-server": "POC_SERVER_PORT=3000 ts-node ./src/server",
+    "run-bank": "BANK_API_PORT=3001 ts-node ./src/fake-collaborators/bank",
+    "run": "concurrently \"yarn run-server\" \"yarn run-bank\""
+  },
   "dependencies": {
     "@temporalio/activity": "^1.11.1",
     "@temporalio/client": "^1.11.1",
@@ -11,6 +16,7 @@
     "@temporalio/workflow": "^1.11.1",
     "express": "^4.19.2",
     "ts-pattern": "^5.3.1",
+    "uuid": "^10.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -20,6 +26,7 @@
     "@types/jest": "^29.5.12",
     "@types/node": "^22.3.0",
     "@types/supertest": "^6.0.2",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.1.0",
     "@typescript-eslint/parser": "^8.1.0",
     "eslint": "^9.9.0",
