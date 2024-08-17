@@ -1,6 +1,10 @@
 import { z } from "zod";
 import * as fc from "fast-check";
-import { KnownWebhookSchema } from "../schemas/webhook-schema";
+import {
+  KnownWebhookSchema,
+  WireTransferFailureSchema,
+  WireTransferSuccessSchema,
+} from "../schemas/webhook-schema";
 
 describe("WebhookSchema with fast-check", () => {
   // Define a reasonable date range for the timestamp
@@ -11,18 +15,19 @@ describe("WebhookSchema with fast-check", () => {
 
   // Valid Webhook arbitrary generator for SUCCESS status
   const successWebhookArbitrary = fc.record({
-    transactionId: fc.uuid(),
     status: fc.constant("SUCCESS"),
+    transactionId: fc.uuid(),
+    requestId: fc.uuid(),
+    timestamp: fc.date(dateRange).map((d) => d.toISOString()),
     comments: fc.option(fc.string({ minLength: 1, maxLength: 100 }), {
       nil: undefined,
     }),
-    timestamp: fc.date(dateRange).map((d) => d.toISOString()),
-    failureReason: fc.constant(undefined), // Ensure failureReason is absent
   });
 
   // Valid Webhook arbitrary generator for FAILURE status
   const failureWebhookArbitrary = fc.record({
     transactionId: fc.uuid(),
+    requestId: fc.uuid(),
     status: fc.constant("FAILURE"),
     comments: fc.option(fc.string({ minLength: 1, maxLength: 100 }), {
       nil: undefined,
@@ -82,6 +87,4 @@ describe("WebhookSchema with fast-check", () => {
       })
     );
   });
-
-  // Additional edge cases and invalid scenarios can be added here
 });

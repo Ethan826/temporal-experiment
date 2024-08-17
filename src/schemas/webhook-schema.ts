@@ -12,6 +12,7 @@ const FailureReasonSchema = z.enum([
 // Shared properties for all webhooks
 const sharedProperties = {
   transactionId: z.string().uuid(),
+  requestId: z.string().uuid(),
   timestamp: z.string().datetime(),
   comments: z.string().optional(),
 };

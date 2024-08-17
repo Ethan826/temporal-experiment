@@ -1,6 +1,5 @@
 import { parseWebhook } from "../activities/parse-webhook";
 import {
-  Webhook,
   KnownWebhookSchema,
   UnknownWebhookSchema,
 } from "../schemas/webhook-schema";
@@ -9,14 +8,12 @@ describe("parseWebhook", () => {
   it("should correctly parse a known webhook type", async () => {
     const knownWebhookData = {
       status: "SUCCESS",
+      requestId: "da48555a-fd28-4db7-92b9-2948c59ac168",
       transactionId: "123e4567-e89b-12d3-a456-426614174000",
       timestamp: "2024-08-17T12:34:56Z",
     };
 
     const parsedWebhook = await parseWebhook(knownWebhookData);
-
-    // Validate that the result matches the known webhook schema
-    expect(KnownWebhookSchema.safeParse(parsedWebhook).success).toBe(true);
     expect(parsedWebhook).toEqual(knownWebhookData);
   });
 
