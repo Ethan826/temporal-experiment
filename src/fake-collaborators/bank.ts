@@ -59,10 +59,11 @@ app.post("/initiate-wire", (req, res) => {
 
   const wire = WireTransferRequestSchema.parse(req.body);
   inFlightWires.push(wire);
+  console.log(`Bank received a wire request ${JSON.stringify(wire)}`);
 
   // Simulate successful wire transfer
   res.status(StatusCodes.OK).json({
-    transactionId: req.body.transactionId,
+    transactionId: req.body.id,
     status: "SUCCESS",
     message: "Wire transfer initiated successfully.",
   });

@@ -3,14 +3,15 @@ import { handleWebhookWorkflow } from "../workflows";
 import { Request, Response } from "express";
 import { WorkflowClient } from "@temporalio/client";
 
-export const webhookHandler =
-  (client: WorkflowClient) => async (req: Request, res: Response) => {
-    try {
-      const webhookData = req.body;
+const createWebhookWorkflowName = () => `webhook-${v4()}`;
 
-      const workflowId = `webhook-${v4()}`;
+export const webhookHandler =
+  (client: WorkflowClient) =>
+  async ({ body }: Request, res: Response) => {
+    try {
+      const workflowId = createWebhookWorkflowName();
       await client.start(handleWebhookWorkflow, {
-        args: [webhookData],
+        args: [body],
         workflowId,
         taskQueue: "webhook-task-queue", // Ensure this matches your worker setup
       });
