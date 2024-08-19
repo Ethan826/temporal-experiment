@@ -2,6 +2,8 @@ import express from "express";
 import { z } from "zod";
 import { WorkflowClient } from "@temporalio/client";
 import { v4 as uuidv4 } from "uuid";
+import { handleWebhookWorkflow } from "../workflows/handle-webhook-workflow";
+import { createInitiateDomesticWireTransferWorkflowName } from "../workflows";
 
 // Initialize the Express app
 const app = express();
@@ -44,6 +46,7 @@ app.post("/initiate-wire-transfer", async (req, res) => {
 
   try {
     // Use the provided transactionId or generate a new one
+    // FIXIME
     const id = parsed.data.id || uuidv4();
 
     // Start the Temporal workflow for wire transfer
@@ -62,7 +65,7 @@ app.post("/initiate-wire-transfer", async (req, res) => {
         },
       ],
       taskQueue: "initiate-domestic-wire-transfer-task-queue",
-      workflowId: id, // Use the transactionId as the workflowId
+      workflowId: createInitiateDomesticWireTransferWorkflowName(id),
     });
 
     res.status(202).json({
@@ -75,6 +78,29 @@ app.post("/initiate-wire-transfer", async (req, res) => {
     res.status(500).json({
       error:
         "Failed to process wire transfer initiation. Please try again later.",
+    });
+  }
+});
+
+app.post("/webhook", async (req, res) => {
+  try {
+    const webhookData = req.body;
+
+    const workflowId = `webhook-${uuidv4()}`;
+    await client.start(handleWebhookWorkflow, {
+      args: [webhookData],
+      workflowId,
+      taskQueue: "webhook-task-queue", // Ensure this matches your worker setup
+    });
+
+    res.status(202).json({
+      status: "PENDING",
+      message: "Webhook received and is being processed.",
+    });
+  } catch (error) {
+    console.error("Error handling webhook:", error);
+    res.status(500).json({
+      error: "Failed to process webhook. Please try again later.",
     });
   }
 });

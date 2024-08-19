@@ -9,13 +9,20 @@ import {
   wireTransferSuccessSignal,
   wireTransferFailureSignal,
 } from "../signals";
-import { placeHoldWorkflow } from "./place-hold-workflow";
+import {
+  createPlaceHoldWorkflowName,
+  placeHoldWorkflow,
+} from "./place-hold-workflow";
 import { match } from "ts-pattern";
 import {
   WireTransferSuccess,
   WireTransferFailure,
 } from "../schemas/webhook-schema";
 import * as activities from "../activities";
+
+export const createInitiateDomesticWireTransferWorkflowName = (
+  transferRequestId: string
+) => `initiate-domestic-wire-transfer-${transferRequestId}`;
 
 export async function initiateDomesticWireTransferWorkflow(
   input: WireTransferRequest,
@@ -29,7 +36,7 @@ export async function initiateDomesticWireTransferWorkflow(
 
   const placeHoldResult = await startChild(placeHoldWorkflow, {
     args: [input.senderAccount, input.amount],
-    workflowId: `place-hold-${input.id}`,
+    workflowId: createPlaceHoldWorkflowName(input.id),
     taskQueue: "place-hold-task-queue",
   });
 

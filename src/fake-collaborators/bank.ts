@@ -81,7 +81,7 @@ const sleep = async (ms: number): Promise<void> =>
 
 const sendWebhook = async (wire: WireTransferRequest): Promise<void> => {
   const webhook = webhookFromWire(wire);
-  const webhookUrl = "http://localhost:3000/webhook-endpoint"; // Replace with the actual webhook endpoint
+  const webhookUrl = "http://localhost:3000/webhook";
 
   try {
     const response = await fetch(webhookUrl, {
