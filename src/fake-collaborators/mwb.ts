@@ -1,5 +1,8 @@
-import { uuid4 } from "@temporalio/workflow";
+import { match, P } from "ts-pattern";
 import express from "express";
+import { StatusCodes } from "http-status-codes";
+import { v4 } from "uuid";
+import { faker } from "@faker-js/faker";
 
 const app = express();
 app.use(express.json());
@@ -7,23 +10,18 @@ app.use(express.json());
 const port = process.env.MWB_PORT || 3002;
 const defaultChaosFactor = parseFloat(process.env.CHAOS_FACTOR || "0");
 
-const simulateFailure = (chaosFactor: number) => {
-  const random = Math.random();
+const FAILURES = [
+  { status: StatusCodes.SERVICE_UNAVAILABLE, message: "Service Unavailable" },
+  {
+    status: StatusCodes.INTERNAL_SERVER_ERROR,
+    message: "Internal Server Error",
+  },
+  { status: StatusCodes.REQUEST_TIMEOUT, message: "Request Timeout" },
+  { status: StatusCodes.BAD_REQUEST, message: "Bad Request" },
+];
 
-  if (random < chaosFactor) {
-    if (random < chaosFactor / 5) {
-      return { status: 503, message: "Service Unavailable" }; // Legacy system offline
-    } else if (random < (chaosFactor / 5) * 2) {
-      return { status: 500, message: "Internal Server Error" }; // Internal server error
-    } else if (random < (chaosFactor / 5) * 3) {
-      return { status: 408, message: "Request Timeout" }; // Hanging request
-    } else {
-      return { status: 400, message: "Bad Request" }; // Generic bad request
-    }
-  }
-
-  return null;
-};
+const simulateFailure = (chaosFactor: number) =>
+  Math.random() < chaosFactor ? faker.helpers.arrayElement(FAILURES) : null;
 
 app.post("/place-hold", (req, res) => {
   const chaosFactor =
@@ -34,7 +32,7 @@ app.post("/place-hold", (req, res) => {
     return res.status(failure.status).json({ error: failure.message });
   }
 
-  res.status(200).json({ response: "SUCCESS", transactionId: uuid4() });
+  res.status(StatusCodes.OK).json({ response: "SUCCESS", transactionId: v4() });
 });
 
 app.post("/release-funds", (req, res) => {
@@ -46,7 +44,7 @@ app.post("/release-funds", (req, res) => {
     return res.status(failure.status).json({ error: failure.message });
   }
 
-  res.status(200).json({
+  res.status(StatusCodes.OK).json({
     transactionId: req.body.transactionId,
     status: "FUNDS_RELEASED",
     message: "Funds have been successfully released or restored.",
@@ -62,7 +60,7 @@ app.post("/ledger-transaction", (req, res) => {
     return res.status(failure.status).json({ error: failure.message });
   }
 
-  res.status(200).json({
+  res.status(StatusCodes.OK).json({
     transactionId: req.body.transactionId,
     status: "TRANSACTION_LEDGERED",
     message: "Transaction has been successfully ledgered.",

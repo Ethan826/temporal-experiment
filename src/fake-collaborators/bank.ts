@@ -4,8 +4,9 @@ import {
   WireTransferRequest,
   WireTransferRequestSchema,
 } from "../schemas/wire-transfer-request";
-import { v4 as uuidv4 } from "uuid";
+import { v4 } from "uuid";
 import { faker } from "@faker-js/faker";
+import { StatusCodes } from "http-status-codes";
 
 const app = express();
 app.use(express.json());
@@ -20,13 +21,22 @@ const simulateFailure = (chaosFactor: number) => {
 
   if (random < chaosFactor) {
     if (random < chaosFactor / 5) {
-      return { status: 503, message: "Service Unavailable" }; // Bank is offline
+      return {
+        status: StatusCodes.SERVICE_UNAVAILABLE,
+        message: "Service Unavailable",
+      }; // Bank is offline
     } else if (random < (chaosFactor / 5) * 2) {
-      return { status: 401, message: "Unauthorized" }; // Bad auth
+      return { status: StatusCodes.UNAUTHORIZED, message: "Unauthorized" }; // Bad auth
     } else if (random < (chaosFactor / 5) * 3) {
-      return { status: 500, message: "Internal Server Error" }; // Internal server error
+      return {
+        status: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: "Internal Server Error",
+      }; // Internal server error
     } else if (random < (chaosFactor / 5) * 4) {
-      return { status: 408, message: "Request Timeout" }; // Hanging request
+      return {
+        status: StatusCodes.REQUEST_TIMEOUT,
+        message: "Request Timeout",
+      }; // Hanging request
     } else {
       return { status: 400, message: "Bad Request" }; // Generic bad request
     }
@@ -51,7 +61,7 @@ app.post("/initiate-wire", (req, res) => {
   inFlightWires.push(wire);
 
   // Simulate successful wire transfer
-  res.status(200).json({
+  res.status(StatusCodes.OK).json({
     transactionId: req.body.transactionId,
     status: "SUCCESS",
     message: "Wire transfer initiated successfully.",
@@ -64,7 +74,7 @@ app.listen(port, async () => {
   );
 
   while (true) {
-    await sleep(getRandomInt(1000, 60000));
+    await sleep(getRandomInt(ONE_SECOND_IN_MS, ONE_MINUTE_IN_MS));
     if (inFlightWires.length > 0) {
       const randomIndex = getRandomInt(0, inFlightWires.length - 1);
       const removedElement = inFlightWires.splice(randomIndex, 1)[0];
@@ -72,6 +82,9 @@ app.listen(port, async () => {
     }
   }
 });
+
+const ONE_SECOND_IN_MS = 1000;
+const ONE_MINUTE_IN_MS = ONE_SECOND_IN_MS * 60;
 
 const getRandomInt = (min: number, max: number): number =>
   Math.floor(Math.random() * (max - min + 1)) + min;
@@ -81,7 +94,7 @@ const sleep = async (ms: number): Promise<void> =>
 
 const sendWebhook = async (wire: WireTransferRequest): Promise<void> => {
   const webhook = webhookFromWire(wire);
-  const webhookUrl = "http://localhost:3000/webhook";
+  const webhookUrl = process.env.WEBHOOK_URL || "http://localhost:3000/webhook";
 
   try {
     const response = await fetch(webhookUrl, {
@@ -105,7 +118,7 @@ const sendWebhook = async (wire: WireTransferRequest): Promise<void> => {
 const webhookFromWire = (wire: WireTransferRequest): Webhook => {
   const shouldSucceed = Math.random() >= actualChaosFactor;
   return {
-    transactionId: uuidv4(),
+    transactionId: v4(),
     requestId: wire.id,
     timestamp: new Date().toISOString(),
     ...(shouldSucceed

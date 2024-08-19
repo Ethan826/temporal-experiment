@@ -1,3 +1,4 @@
+import { StatusCodes } from "http-status-codes";
 import { initiateDomesticWireTransfer } from "./initiate-domestic-wire-transfer";
 import { ApplicationFailure } from "@temporalio/workflow";
 
@@ -22,7 +23,7 @@ describe("initiateDomesticWireTransfer", () => {
 
   it("should successfully initiate a wire transfer", async () => {
     fetchMock.mockResolvedValueOnce({
-      status: 200,
+      status: StatusCodes.OK,
       json: async () => ({
         success: true,
         id: wireTransferData.id,

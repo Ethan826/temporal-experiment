@@ -1,6 +1,7 @@
 import { match, P } from "ts-pattern";
 import { ApplicationFailure } from "@temporalio/workflow";
 import { WireTransferRequest } from "../schemas/wire-transfer-request";
+import { StatusCodes } from "http-status-codes";
 
 export type InitiateDomesticWireResponse = {
   id: string;
@@ -34,13 +35,13 @@ export const initiateDomesticWireTransfer = async (
 
 const handleResponse = <B>(response: Response): Promise<B> =>
   match(response)
-    .with({ status: 200 }, (res) => res.json())
-    .with({ status: 503 }, () => {
+    .with({ status: StatusCodes.OK }, (res) => res.json())
+    .with({ status: StatusCodes.SERVICE_UNAVAILABLE }, () => {
       throw ApplicationFailure.retryable(
         "Bank service unavailable, retrying..."
       );
     })
-    .with({ status: 401 }, () => {
+    .with({ status: StatusCodes.UNAUTHORIZED }, () => {
       throw ApplicationFailure.nonRetryable("Authentication failed");
     })
     .with(

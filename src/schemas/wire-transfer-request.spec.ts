@@ -8,7 +8,7 @@ describe("WireTransferRequestSchema with fast-check", () => {
       .float({ min: 1, max: 100000 }) // Ensuring positive numbers between 1 and 100,000
       .filter((n) => !isNaN(n) && n > 0) // Filtering out NaN and negative numbers
       .map((n) => parseFloat(n.toFixed(2))), // Rounding to two decimal places
-    currency: fc.constant("USD"), // Currency is fixed to 'USD'
+    currency: fc.constant("USD"),
     senderAccount: fc.stringOf(fc.constantFrom(..."0123456789"), {
       minLength: 10,
       maxLength: 20,

@@ -3,9 +3,11 @@ import { z } from "zod";
 import { createInitiateDomesticWireTransferWorkflowName } from "../workflows";
 import { Request, Response } from "express";
 import { WorkflowClient } from "@temporalio/client";
+import { WireTransferRequest } from "../schemas/wire-transfer-request";
+import { StatusCodes } from "http-status-codes";
 
 export const WireTransferRequestSchema = z.object({
-  id: z.string().uuid().optional(), // Optional if you want to generate it server-side
+  id: z.string().uuid(),
   amount: z.number().positive(),
   currency: z.enum(["USD", "EUR", "GBP"]),
   senderAccount: z.string().min(1),
@@ -20,51 +22,40 @@ export const initiateWireTransferHandler =
     const parsed = WireTransferRequestSchema.safeParse(req.body);
 
     if (!parsed.success) {
-      return res.status(400).json(parsed.error.flatten());
+      return res.status(StatusCodes.BAD_REQUEST).json(parsed.error.flatten());
     }
 
-    const {
-      amount,
-      currency,
-      senderAccount,
-      receiverAccount,
-      receiverName,
-      receiverBank,
-      note,
-    } = parsed.data;
-
     try {
-      const id = parsed.data.id || v4();
+      startWorkflow(client)(parsed.data);
 
-      // Start the Temporal workflow for wire transfer
-      await client.start("initiateDomesticWireTransferWorkflow", {
-        args: [
-          {
-            fetchImpl: fetch,
-            id,
-            amount,
-            currency,
-            senderAccount,
-            receiverAccount,
-            receiverName,
-            receiverBank,
-            note,
-          },
-        ],
-        taskQueue: "initiate-domestic-wire-transfer-task-queue",
-        workflowId: createInitiateDomesticWireTransferWorkflowName(id),
-      });
-
-      return res.status(202).json({
-        transactionId: id,
-        status: "PENDING",
-        message: "Wire transfer initiation received. Processing...",
-      });
+      return res
+        .status(StatusCodes.ACCEPTED)
+        .json(createSuccessPayload(parsed.data.id));
     } catch (error) {
       console.error("Error starting workflow:", error);
-      return res.status(500).json({
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error:
           "Failed to process wire transfer initiation. Please try again later.",
       });
     }
   };
+
+const startWorkflow =
+  (client: WorkflowClient) => async (request: WireTransferRequest) => {
+    await client.start("initiateDomesticWireTransferWorkflow", {
+      args: [
+        {
+          ...request,
+          fetchImpl: fetch,
+        },
+      ],
+      taskQueue: "initiate-domestic-wire-transfer-task-queue",
+      workflowId: createInitiateDomesticWireTransferWorkflowName(request.id),
+    });
+  };
+
+const createSuccessPayload = (transactionId: string) => ({
+  transactionId,
+  status: "PENDING",
+  message: "Wire transfer initiation received. Processing...",
+});
