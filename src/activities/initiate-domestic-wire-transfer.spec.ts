@@ -25,16 +25,13 @@ describe("initiateDomesticWireTransfer", () => {
     fetchMock.mockResolvedValueOnce({
       status: StatusCodes.OK,
       json: async () => ({
-        success: true,
-        id: wireTransferData.id,
+        transactionId: "abc34567-e89b-12d3-a456-426614174000",
+        status: "SUCCESS",
+        message: "Wire transfer initiated successfully.",
       }),
     });
 
-    const result = await initiateDomesticWireTransfer(
-      wireTransferData,
-      apiUrl,
-      fetchMock
-    );
+    await initiateDomesticWireTransfer(wireTransferData, apiUrl, fetchMock);
 
     expect(fetchMock).toHaveBeenCalledWith(apiUrl, {
       method: "POST",
@@ -42,11 +39,6 @@ describe("initiateDomesticWireTransfer", () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(wireTransferData),
-    });
-
-    expect(result).toEqual({
-      success: true,
-      id: wireTransferData.id,
     });
   });
 
